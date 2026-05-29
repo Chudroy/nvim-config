@@ -3,3 +3,6 @@
 -- Add any additional keymaps here
 vim.keymap.set("n", "gg", "gg0", { desc = "Go to first line and first column" })
 vim.keymap.set("n", "G", "G$", { desc = "Go to last line and end of line" })
+vim.keymap.set("n", "<leader>xs", "<cmd>Trouble snacks toggle<cr>", {
+  desc = "Snacks Search Results (Trouble)",
+})

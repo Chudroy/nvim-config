@@ -7,6 +7,12 @@ return {
           explorer = {
             focus = "list",
 
+            -- Show gitignored files/folders by default.
+            ignored = true,
+
+            -- Also show dotfiles like .env, .github, .gitignore.
+            hidden = true,
+
             actions = {
               explorer_yank_cwd = function(picker)
                 local paths = {}
