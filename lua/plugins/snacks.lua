@@ -2,6 +2,16 @@ return {
   {
     "folke/snacks.nvim",
     opts = {
+      styles = {
+        scratch = {
+          width = 0.95,
+          height = 0.95,
+          border = "rounded",
+        },
+      },
+      scratch = {
+        ft = "text",
+      },
       picker = {
         sources = {
           explorer = {

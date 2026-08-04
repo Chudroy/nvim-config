@@ -11,8 +11,17 @@ vim.api.nvim_create_user_command("Home", function()
   require("snacks").dashboard()
 end, { desc = "Open the LazyVim dashboard" })
 
+vim.api.nvim_create_user_command("DepsAudit", function()
+  vim.cmd("Lazy check")
+  vim.defer_fn(function()
+    vim.cmd("tabnew")
+    vim.cmd("Mason")
+  end, 100)
+end, {
+  desc = "Check Lazy plugins and Mason tools without updating them",
+})
+
 vim.cmd("silent! cunabbrev home")
 vim.cmd([[
   cnoreabbrev <expr> home getcmdtype() ==# ':' && getcmdline() ==# 'home' ? 'Home' : 'home'
 ]])
-

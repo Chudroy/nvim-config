@@ -2,57 +2,89 @@ return {
   {
     "nvim-mini/mini.files",
     opts = function(_, opts)
-      opts.content = opts.content or {}
-      opts.content.filter = function(entry)
-        return not vim.startswith(entry.name, ".")
-      end
-
       opts.options = opts.options or {}
       opts.options.permanent_delete = false
+
+      opts.windows = opts.windows or {}
+      opts.windows.width_preview = 60
     end,
+
     init = function()
-      local show_dotfiles = false
-
-      local filter_show = function()
-        return true
+      local function notify(message, level)
+        vim.notify(message, level or vim.log.levels.INFO, {
+          title = "mini.files",
+        })
       end
 
-      local filter_hide = function(entry)
-        return not vim.startswith(entry.name, ".")
+      local function yank_path(relative)
+        local MiniFiles = require("mini.files")
+        local buf_id = vim.api.nvim_get_current_buf()
+
+        local mode = vim.fn.mode()
+        local start_line
+        local end_line
+
+        if mode:match("^[vV\22]") then
+          start_line = vim.fn.line("v")
+          end_line = vim.fn.line(".")
+
+          if start_line > end_line then
+            start_line, end_line = end_line, start_line
+          end
+        else
+          start_line = vim.fn.line(".")
+          end_line = start_line
+        end
+
+        local paths = {}
+        local seen = {}
+
+        for line = start_line, end_line do
+          local entry = MiniFiles.get_fs_entry(buf_id, line)
+          local path = entry and entry.path
+
+          if type(path) == "string" and path ~= "" and not seen[path] then
+            seen[path] = true
+
+            if relative then
+              path = vim.fn.fnamemodify(path, ":.")
+            end
+
+            table.insert(paths, path)
+          end
+        end
+
+        if #paths == 0 then
+          notify("No file path found", vim.log.levels.WARN)
+          return
+        end
+
+        local value = table.concat(paths, "\n")
+
+        vim.fn.setreg("+", value, "l")
+        vim.fn.setreg('"', value, "l")
+
+        notify(relative and "Copied relative path" or "Copied absolute path")
       end
 
-      local group = vim.api.nvim_create_augroup("user_minifiles_hidden_default", { clear = true })
-
       vim.api.nvim_create_autocmd("User", {
-        group = group,
-        pattern = "MiniFilesExplorerOpen",
-        callback = function()
-          show_dotfiles = false
-          require("mini.files").refresh({
-            content = {
-              filter = filter_hide,
-            },
-          })
-        end,
-      })
-
-      vim.api.nvim_create_autocmd("User", {
-        group = group,
         pattern = "MiniFilesBufferCreate",
         callback = function(args)
-          vim.schedule(function()
-            vim.keymap.set("n", "g.", function()
-              show_dotfiles = not show_dotfiles
-              require("mini.files").refresh({
-                content = {
-                  filter = show_dotfiles and filter_show or filter_hide,
-                },
-              })
-            end, {
-              buffer = args.data.buf_id,
-              desc = "Toggle hidden files",
-            })
-          end)
+          local buf_id = args.data.buf_id
+
+          vim.keymap.set({ "n", "x" }, "gY", function()
+            yank_path(false)
+          end, {
+            buffer = buf_id,
+            desc = "Yank absolute path",
+          })
+
+          vim.keymap.set({ "n", "x" }, "gy", function()
+            yank_path(true)
+          end, {
+            buffer = buf_id,
+            desc = "Yank relative path",
+          })
         end,
       })
     end,
